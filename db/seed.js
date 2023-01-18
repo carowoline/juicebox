@@ -1,4 +1,4 @@
-const {
+const {  
   client,
   createUser,
   updateUser,
@@ -7,7 +7,8 @@ const {
   createPost,
   updatePost,
   getAllPosts,
-  getPostsByUser
+  getAllTags,
+  getPostsByTagName
 } = require('./index');
 
 async function dropTables() {
@@ -147,7 +148,7 @@ async function createTags(tagList) {
       INSERT INTO tags (name)
       VALUES (${insertValues})
       ON CONFLICT (name) DO NOTHING;
-    `);
+    `, [tagList]);
 
     // select all tags where the name is in our taglist
     // return the rows from the query
@@ -155,7 +156,7 @@ async function createTags(tagList) {
       SELECT * FROM tags
       WHERE name
       IN (${selectValues});
-    `);
+    `, [tagList]);
 
     return rows;
   } catch (error) {
@@ -203,9 +204,23 @@ async function testDB() {
     });
     console.log("Result:", updatePostResult);
 
+    console.log("Calling updatePost on posts[1], only updating tags");
+    const updatePostTagsResult = await updatePost(posts[1].id, {
+      tags: ["#youcandoanything", "#redfish", "#bluefish"]
+    });
+    console.log("Result:", updatePostTagsResult);
+
     console.log("Calling getUserById with 1");
     const albert = await getUserById(1);
     console.log("Result:", albert);
+
+    console.log("Calling getAllTags");
+    const allTags = await getAllTags();
+    console.log("Result:", allTags);
+
+    console.log("Calling getPostsByTagName with #happy");
+    const postsWithHappy = await getPostsByTagName("#happy");
+    console.log("Result:", postsWithHappy);
 
     console.log("Finished database tests!");
   } catch (error) {
