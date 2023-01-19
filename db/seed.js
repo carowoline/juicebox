@@ -43,6 +43,7 @@ async function createTables() {
         location varchar(255) NOT NULL,
         active boolean DEFAULT true
       );
+
       CREATE TABLE posts (
         id SERIAL PRIMARY KEY,
         "authorId" INTEGER REFERENCES users(id),
@@ -50,13 +51,16 @@ async function createTables() {
         content TEXT NOT NULL,
         active BOOLEAN DEFAULT true
       );
+
       CREATE TABLE tags (
         id SERIAL PRIMARY KEY,
         name varchar(255) UNIQUE NOT NULL
       );
+
       CREATE TABLE post_tags (
-        "postId" INTEGER REFERENCES posts(id) UNIQUE,
-        "tagId" INTEGER REFERENCES tags(id) UNIQUE
+        "postId" INTEGER REFERENCES posts(id),
+        "tagId" INTEGER REFERENCES tags(id),
+        UNIQUE ("postId", "tagId")
       );
     `);
 
@@ -71,19 +75,19 @@ async function createInitialUsers() {
   try {
     console.log("Starting to create users...");
 
-    await createUser({
-      username: 'albert',
+    await createUser({ 
+      username: 'albert', 
       password: 'bertie99',
       name: 'Al Bert',
-      location: 'Sidney, Australia'
+      location: 'Sidney, Australia' 
     });
-    await createUser({
-      username: 'sandra',
+    await createUser({ 
+      username: 'sandra', 
       password: '2sandy4me',
       name: 'Just Sandra',
       location: 'Ain\'t tellin\''
     });
-    await createUser({
+    await createUser({ 
       username: 'glamgal',
       password: 'soglam',
       name: 'Joshua',
@@ -105,61 +109,26 @@ async function createInitialPosts() {
     await createPost({
       authorId: albert.id,
       title: "First Post",
-      content: "This is my first post. I hope I love writing blogs as much as I love writing them."
+      content: "This is my first post. I hope I love writing blogs as much as I love writing them.",
+      tags: ["#happy", "#youcandoanything"]
     });
 
     await createPost({
       authorId: sandra.id,
       title: "How does this work?",
-      content: "Seriously, does this even do anything?"
+      content: "Seriously, does this even do anything?",
+      tags: ["#happy", "#worst-day-ever"]
     });
 
     await createPost({
       authorId: glamgal.id,
       title: "Living the Glam Life",
-      content: "Do you even? I swear that half of you are posing."
+      content: "Do you even? I swear that half of you are posing.",
+      tags: ["#happy", "#youcandoanything", "#canmandoeverything"]
     });
     console.log("Finished creating posts!");
   } catch (error) {
     console.log("Error creating posts!");
-    throw error;
-  }
-}
-
-async function createTags(tagList) {
-  if (tagList.length === 0) {
-    return;
-  }
-
-  // need something like: $1), ($2), ($3 
-  const insertValues = tagList.map(
-    (_, index) => `$${index + 1}`).join('), (');
-  // then we can use: (${ insertValues }) in our string template
-
-  // need something like $1, $2, $3
-  const selectValues = tagList.map(
-    (_, index) => `$${index + 1}`).join(', ');
-  // then we can use (${ selectValues }) in our string template
-
-  try {
-    // insert the tags, doing nothing on conflict
-    // returning nothing, we'll query after
-    await client.query(`
-      INSERT INTO tags (name)
-      VALUES (${insertValues})
-      ON CONFLICT (name) DO NOTHING;
-    `, [tagList]);
-
-    // select all tags where the name is in our taglist
-    // return the rows from the query
-    const { rows }= await client.query(`
-      SELECT * FROM tags
-      WHERE name
-      IN (${selectValues});
-    `, [tagList]);
-
-    return rows;
-  } catch (error) {
     throw error;
   }
 }
@@ -228,6 +197,7 @@ async function testDB() {
     throw error;
   }
 }
+
 
 rebuildDB()
   .then(testDB)
